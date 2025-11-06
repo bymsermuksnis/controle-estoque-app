@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -109,6 +110,7 @@ fun MainScreen(context: Context?) {
                             coroutineScope.launch {
                                 try {
                                     val novoProduto = Produto(
+                                        id = null,
                                         nome = nome.value,
                                         quantidade = quantidade.value,
                                         cor = cor.value
@@ -179,6 +181,29 @@ fun MainScreen(context: Context?) {
                                 Text("Quantidade: ${produto.quantidade}", Modifier.padding(5.dp))
                                 Text("Cor: ${produto.cor}", Modifier.padding(5.dp))
                             }
+
+                            Button(
+                                modifier = Modifier.padding(5.dp),
+                                shape = RectangleShape,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        try {
+                                            RetrofitClient.apiService.deleteProduto(produto.id ?: 0)
+
+                                            Toast.makeText(
+                                                context,
+                                                "Produto Deletado com sucesso",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                        } catch (e: Exception) {
+                                            Log.e("API", "Erro de rede/conexão: ${e.message}", e)
+                                        }
+                                    }
+                                }) {
+                                Text(text = "Deletar")
+                            }
+
                             Spacer(Modifier.height(16.dp))
                         }
                     }
