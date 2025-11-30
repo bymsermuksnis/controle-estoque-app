@@ -63,6 +63,8 @@ fun MainScreen(context: Context?) {
         var nome = remember { mutableStateOf("") }
         var quantidade = remember { mutableStateOf("") }
         var cor = remember { mutableStateOf("") }
+        var editar = remember { mutableStateOf(false) }
+        var id = remember { mutableStateOf(0) }
 
         var produtos = remember { mutableStateOf<List<Produto>?>(null) }
 
@@ -115,16 +117,21 @@ fun MainScreen(context: Context?) {
                                         quantidade = quantidade.value,
                                         cor = cor.value
                                     )
-                                    val response =
+                                    val response = if (editar.value){
+                                        RetrofitClient.apiService.updateProduto(id.value, novoProduto)
+                                    } else {
                                         RetrofitClient.apiService.createProduto(novoProduto)
+                                    }
 
                                     if (response.isSuccessful) {
                                         val produtoCriado = response.body()
                                         Toast.makeText(
                                             context,
-                                            "Produto criado com sucesso",
+                                            if(editar.value) "Produto editado com sucesso" else "Produto criado com sucesso",
                                             Toast.LENGTH_SHORT
                                         ).show()
+                                        id.value = 0
+                                        editar.value = false
                                         nome.value = ""
                                         quantidade.value = ""
                                         cor.value = ""
@@ -136,7 +143,11 @@ fun MainScreen(context: Context?) {
                                 }
                             }
                         }) {
-                        Text(text = "Cadastrar Produto")
+                            if (editar.value){
+                                Text(text = "Editar Produto")
+                            } else {
+                                Text(text = "Cadastrar Produto")
+                            }
                     }
 
                     Button(
@@ -182,26 +193,57 @@ fun MainScreen(context: Context?) {
                                 Text("Cor: ${produto.cor}", Modifier.padding(5.dp))
                             }
 
-                            Button(
-                                modifier = Modifier.padding(5.dp),
-                                shape = RectangleShape,
-                                onClick = {
-                                    coroutineScope.launch {
-                                        try {
-                                            RetrofitClient.apiService.deleteProduto(produto.id ?: 0)
+                            Row {
+                                Button(
+                                    modifier = Modifier.padding(5.dp),
+                                    shape = RectangleShape,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            try {
+                                                RetrofitClient.apiService.deleteProduto(
+                                                    produto.id ?: 0
+                                                )
 
-                                            Toast.makeText(
-                                                context,
-                                                "Produto Deletado com sucesso",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                                Toast.makeText(
+                                                    context,
+                                                    "Produto Deletado com sucesso",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
 
-                                        } catch (e: Exception) {
-                                            Log.e("API", "Erro de rede/conexão: ${e.message}", e)
+                                            } catch (e: Exception) {
+                                                Log.e(
+                                                    "API",
+                                                    "Erro de rede/conexão: ${e.message}",
+                                                    e
+                                                )
+                                            }
                                         }
-                                    }
-                                }) {
-                                Text(text = "Deletar")
+                                    }) {
+                                    Text(text = "Deletar")
+                                }
+
+                                Button(
+                                    modifier = Modifier.padding(5.dp),
+                                    shape = RectangleShape,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            try {
+                                                id.value = produto.id ?: 0
+                                                editar.value = true
+                                                nome.value = produto.nome
+                                                quantidade.value = produto.quantidade
+                                                cor.value = produto.cor
+                                            } catch (e: Exception) {
+                                                Log.e(
+                                                    "API",
+                                                    "Erro de rede/conexão: ${e.message}",
+                                                    e
+                                                )
+                                            }
+                                        }
+                                    }) {
+                                    Text(text = "Editar")
+                                }
                             }
 
                             Spacer(Modifier.height(16.dp))
